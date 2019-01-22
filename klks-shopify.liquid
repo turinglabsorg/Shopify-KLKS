@@ -1,0 +1,82 @@
+{% if {{checkout.transactions[0].gateway}} == "KLKS payment" %}
+
+<br><br>
+<div id="root"></div>
+
+<script>
+  window.KLKSAddress = 'YOUR_KLKS_ADDRESS';
+  const app = document.getElementById('root');
+  const container = document.createElement('div');
+  app.setAttribute('class', 'content-box');
+  app.appendChild(container);
+
+  const container2 = document.createElement('div');
+  container2.setAttribute('class', 'content-box__row');
+
+  var head = document.createElement('H2');     
+  head.textContent = "Payment Required"; 
+
+  app.appendChild(container2);
+  container2.appendChild(head);
+
+  const container3 = document.createElement('div');
+  container3.setAttribute('class', 'content-box__row');
+  app.appendChild(container3);
+
+  var request = new XMLHttpRequest();
+  var partial = {{checkout.total_price}};
+  var partstring = partial.toString();
+  var integer = partstring.substring(0, partstring.length - 2);
+  var float = partstring.substring(partstring.length, partstring.length - 2);
+  var amount = parseFloat(integer+'.'+float);
+  var order_number = {{checkout.order_number}};
+
+  request.open('GET', 'https://api.coingecko.com/api/v3/coins/kalkulus', true);
+  request.onload = function () {
+
+      // Begin accessing JSON data here
+      var data = JSON.parse(this.response);
+      var price = data.market_data.current_price.usd;
+
+      if (request.status >= 200 && request.status < 400) {
+
+          var KLKSNeeded = parseInt(amount / price);
+          KLKSNeeded = KLKSNeeded.toString();
+          var KLKSFormat = KLKSNeeded + '.' + order_number;
+
+          const p = document.createElement('p');
+          
+          p.textContent = `Please send payment of ${KLKSFormat} KLKS to address: ` + window.KLKSAddress;
+          container3.appendChild(p);
+
+          const br = document.createElement('br');
+          container3.appendChild(br);
+
+          const p2 = document.createElement('p');
+          p2.textContent = 'This is your order number: {{checkout.order_number}}';
+          container3.appendChild(p2);
+          container3.appendChild(br);
+
+          const p3 = document.createElement('p');
+          p3.textContent = 'Please complete payment in the next 5 minutes.';
+          container3.appendChild(p3);
+          container3.appendChild(br);
+
+          const qr= document.createElement('img');
+          qr.src = `https://chart.googleapis.com/chart?cht=qr&chl=klks:` + window.KLKSAddress + `%26amount=${KLKSFormat}&chs=300x300&chld=L|0`;
+          container3.appendChild(qr);
+          
+    } else {
+
+          const errorMessage = document.createElement('p');
+          errorMessage.textContent = `Sorry it's not working! Try refreshing the page.`;
+          app.appendChild(errorMessage);
+
+    }
+
+  }
+
+  request.send();
+</script>
+
+{% endif %}
